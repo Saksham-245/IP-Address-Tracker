@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- displays site properly based on user's device -->
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./images/favicon-32x32.png"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+      integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+      crossorigin=""
+    ></script>
+    <script defer src="script.js"></script>
+    <title>Frontend Mentor | IP Address Tracker</title>
+
+    <!-- Feel free to remove these styles or customise in your own stylesheet 👍 -->
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap");
+
+      body {
+        background: url("./images/pattern-bg.png");
+      }
+
+      #top h3 {
+        text-align: center;
+        color: white;
+        font-family: "Rubik", "sans-serif";
+        font-weight: 500;
+        font-size: 24px;
+      }
+      #id {
+        outline: none;
+        width: 320px;
+      }
+      button:focus {
+        outline: none !important;
+      }
+      button:active {
+        color: gray;
+      }
+      form {
+        display: flex;
+        justify-content: center;
+      }
+      .attribution {
+        font-size: 11px;
+        text-align: center;
+      }
+      .attribution a {
+        color: hsl(228, 45%, 44%);
+      }
+
+      #cards {
+        position: absolute;
+        z-index: 8;
+        top: 20%;
+        left: 30%;
+      }
+      #map {
+        z-index: 1;
+        margin-top: 105px;
+        height: 482px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="top">
+      <h3>IP Address Tracker</h3>
+      <form>
+        <input
+          type="text"
+          name="id"
+          id="id"
+          class="form-control"
+          placeholder="Search for any IP address or domain"
+        />
+        <div id="button">
+          <button type="submit" class="btn btn-dark">
+            <img src="./images/icon-arrow.svg" alt="" />
+          </button>
+        </div>
+      </form>
+    </div>
+    <div id="cards">
+      <div class="card">
+        <div class="row g-3">
+          <div class="col-auto">
+            <div class="card-body">
+              <h5 class="card-title">IP Address</h5>
+              <p class="card-text" id="address"></p>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="card-body">
+              <h5 class="card-title">Location</h5>
+              <p class="card-text" id="location"></p>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="card-body">
+              <h5 class="card-title">Timezone</h5>
+              <p class="card-text" id="timezone"></p>
+            </div>
+          </div>
+          <div class="col-auto">
+            <div class="card-body">
+              <h5 class="card-title">ISP</h5>
+              <p class="card-text" id="isp"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="map"></div>
+
+    <!-- Search for any IP address or domain IP Address Location Timezone UTC -->
+    <!-- add offset value dynamically using the API -->
+
+    <!-- sss -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      //Selectors
+      const input = document.getElementById("id");
+      const button = document.querySelector("button");
+      const addressContent = document.querySelector("#address");
+      const locationContent = document.querySelector("#location");
+      const timezoneContent = document.querySelector("#timezone");
+      const ispContent = document.querySelector("#isp");
+      //Variable
+      let marker;
+
+      //To show the map
+      var map = L.map("map", {
+        center: [51.505, -0.09],
+        zoom: 8,
+        layers: [
+          L.tileLayer("http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "Map data &copy; OpenStreetMap contributors",
+          }),
+        ],
+      });
+
+      //Render Marker function to display the marker
+      const renderMarker = (data) => {
+        if (marker != null) {
+          marker.remove();
+          marker = null;
+        }
+        //We use destructre to extract the latitute and longitude from the data.location object
+        const { lat, lng } = data.location;
+        let coords = [lat, lng];
+        marker = L.marker(coords).addTo(map);
+        map.flyTo(coords, 15);
+      };
+
+      //Function to get the Data using the fetch api
+      const getData = (e) => {
+        e.preventDefault();
+        if (input.value === "" || input.value === null) {
+          return alert("Please input correct IP Address");
+        }
+        fetch(
+          `https://geo.ipify.org/api/v1?apiKey=at_fZ0lvF4pTgWkRRzeshgUVwXwld6Kx&ipAddress=${input.value}`
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            console.log(data);
+            renderMarker(data);
+            addressContent.textContent = data.ip;
+            locationContent.textContent = `${data.location.city}, ${data.location.country}, ${data.location.postalCode}`;
+            timezoneContent.textContent = `${
+              data.location.timezone.includes("-") ? "UTC" : "GMT"
+            } ${data.location.timezone}`;
+            ispContent.textContent = data.isp;
+          })
+          .catch((err) => console.error(err));
+      };
+
+      //Adding event listener to the button to fetch the location with the marker
+      button.addEventListener("click", getData);
+    </script>
+  </body>
+</html>
